@@ -12,8 +12,9 @@
 
   var newless = function(constructor) {
     // in order to preserve constructor name, use the Function constructor
+    var name = constructor.name || "";
     var newlessConstructor = Function("constructor, create",
-      "var newlessConstructor = function " + constructor.name + "() {" +
+      "var newlessConstructor = function " + name + "() {" +
         "var obj = this;" +
         // don't create a new object if we've already got one
         // (e.g. we were called with `new`)
