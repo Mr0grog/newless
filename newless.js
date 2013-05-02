@@ -29,7 +29,10 @@
       "return newlessConstructor;")(constructor, create);
     newlessConstructor.prototype = constructor.prototype;
     newlessConstructor.prototype.constructor = newlessConstructor;
-    newlessConstructor.displayName = constructor.displayName;
+    for (var property in constructor) {
+      console.log("Copy ", property)
+      newlessConstructor[property] = constructor[property];
+    }
     return newlessConstructor;
   };
 

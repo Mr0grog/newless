@@ -21,7 +21,7 @@ describe("newless", function() {
       this.called = true;
     });
     var obj = Construct();
-    
+
     expect(obj.called).to.equal(true);
   });
 
@@ -32,7 +32,7 @@ describe("newless", function() {
       this.second = arguments[1];
     });
     var obj = Construct("a", "b");
-    
+
     expect(obj.first).to.equal("a");
     expect(obj.second).to.equal("b");
   });
@@ -61,5 +61,15 @@ describe("newless", function() {
     BareConstructor.displayName = "Maker Constructor";
     var Construct = newless(BareConstructor);
     expect(Construct.displayName).to.equal("Maker Constructor");
+  });
+
+  it("should preserve properties on the constructor.", function() {
+    var BareConstructor = function() {};
+    BareConstructor.staticFunction = function() {};
+    BareConstructor.someProperty = 15;
+    var Construct = newless(BareConstructor);
+
+    expect(Construct.staticFunction).to.equal(BareConstructor.staticFunction);
+    expect(Construct.someProperty).to.equal(15);
   });
 });
