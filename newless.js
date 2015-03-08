@@ -13,8 +13,15 @@
   var newless = function(constructor) {
     // in order to preserve constructor name, use the Function constructor
     var name = constructor.name || "";
+    
+    // create a list of arguments so that original constructor's `length` property is kept
+    var argumentList = [];
+    for (var i = constructor.length; i > 0; i--) {
+      argumentList.unshift("a" + i);
+    }
+    
     var newlessConstructor = Function("constructor, create",
-      "var newlessConstructor = function " + name + "() {" +
+      "var newlessConstructor = function " + name + "(" + argumentList.join(",") + ") {" +
         "var obj = this;" +
         // don't create a new object if we've already got one
         // (e.g. we were called with `new`)
@@ -30,7 +37,6 @@
     newlessConstructor.prototype = constructor.prototype;
     newlessConstructor.prototype.constructor = newlessConstructor;
     for (var property in constructor) {
-      console.log("Copy ", property)
       newlessConstructor[property] = constructor[property];
     }
     return newlessConstructor;
