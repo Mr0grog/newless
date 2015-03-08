@@ -78,4 +78,24 @@ describe("newless", function() {
     var Construct = newless(BareConstructor);
     expect(Construct.length).to.equal(BareConstructor.length);
   });
+  
+  //---- Tests for ES 2015 classes. Skipped if syntax is not supported. ----
+  var classIt = it;
+  try {
+    var ES2015Class = Function("",
+      "class ES2015Class {" +
+        "constructor() { this.constructed = true; }" +
+      "};" +
+      "return ES2015Class;")();
+  }
+  catch(error) {
+    console.log("This JS engine does not support class syntax; skipping related tests.");
+    var classIt = it.skip;
+  }
+  
+  classIt("should work with ES2015 class syntax.", function() {
+    var NewlessClass = newless(ES2015Class);
+    var object = NewlessClass();
+    expect(object.constructed).to.be.true
+  });
 });
