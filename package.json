@@ -1,6 +1,6 @@
 {
   "name": "newless",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Modify constructors to function without `new`.",
   "main": "newless.js",
   "dependencies": {},
