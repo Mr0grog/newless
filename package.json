@@ -1,9 +1,12 @@
 {
   "name": "newless",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Modify constructors to function without `new`.",
   "main": "newless.js",
-  "dependencies": {},
+  "dependencies": {
+    "expect.js": "^0.3.1",
+    "mocha": "^2.2.0"
+  },
   "devDependencies": {
     "mocha": "~1.9.0",
     "expect.js": "~0.2.0"
@@ -18,7 +21,7 @@
   "keywords": [
     "constructor"
   ],
-  "author": "Rob Brackett",
+  "author": "Rob Brackett <rob@robbrackett.com>",
   "license": "BSD",
   "readmeFilename": "README.md",
   "gitHead": "20030ae9225b14eda740819146dd051efc5170b1"

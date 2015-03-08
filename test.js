@@ -72,4 +72,10 @@ describe("newless", function() {
     expect(Construct.staticFunction).to.equal(BareConstructor.staticFunction);
     expect(Construct.someProperty).to.equal(15);
   });
+  
+  it("should preserve the constructor's `length` property.", function() {
+    var BareConstructor = function(a, b, c) {};
+    var Construct = newless(BareConstructor);
+    expect(Construct.length).to.equal(BareConstructor.length);
+  });
 });
