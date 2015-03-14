@@ -80,7 +80,7 @@ describe("newless", function() {
   });
   
   //---- Tests for ES 2015 classes. Skipped if syntax is not supported. ----
-  var classIt = it;
+  var ifClassSyntaxIt = it;
   try {
     var ES2015Class = Function("",
       "class ES2015Class {" +
@@ -90,12 +90,31 @@ describe("newless", function() {
   }
   catch(error) {
     console.log("This JS engine does not support class syntax; skipping related tests.");
-    var classIt = it.skip;
+    var ifClassSyntaxIt = it.skip;
   }
   
-  classIt("should work with ES2015 class syntax.", function() {
+  ifClassSyntaxIt("should work with ES2015 class syntax.", function() {
     var NewlessClass = newless(ES2015Class);
     var object = NewlessClass();
     expect(object.constructed).to.be.true
+  });
+  
+  //---- ES 2015 default args and destructuring. ----
+  it("Should work with destructuring.", function() {
+    var withDestructuredArgs = newless(function({a, b}, [c, d]){});
+    var signature = withDestructuredArgs.toString().replace(/\s/g, "").slice(0, 21);
+    expect(signature).to.equal("function({a,b},[c,d])");
+  });
+  
+  it("Should work with parentheses in default values.", function() {
+    var withFunnyArgs = newless(function(a="hello(name)"){});
+    var signature = withFunnyArgs.toString().replace(/\s/g, "").slice(0, 21);
+    expect(signature).to.equal("function(a=\"hello(name)\")");
+  });
+  
+  it("Should work with functions in default values.", function() {
+    var withFunnyArgs = newless(function(a=function(b){return b;}){});
+    var signature = withFunnyArgs.toString().replace(/\s/g, "").slice(0, 33);
+    expect(signature).to.equal("function(a=function(b){return b;})");
   });
 });
