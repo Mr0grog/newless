@@ -1,5 +1,8 @@
 (function(global) {
   "use strict";
+  
+  var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+  var CAPTURE_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
 
   // ulta-simple Object.create polyfill (only does half the job)
   var create = Object.create || (function() {
@@ -14,14 +17,12 @@
     // in order to preserve constructor name, use the Function constructor
     var name = constructor.name || "";
     
-    // create a list of arguments so that original constructor's `length` property is kept
-    var argumentList = [];
-    for (var i = constructor.length; i > 0; i--) {
-      argumentList.unshift("a" + i);
-    }
+    // extract the original constructor's arguments
+    var argumentList = Function.prototype.toString.call(constructor)
+      .replace(STRIP_COMMENTS, '').match(CAPTURE_ARGS)[1];
     
     var newlessConstructor = Function("constructor, create",
-      "var newlessConstructor = function " + name + "(" + argumentList.join(",") + ") {" +
+      "var newlessConstructor = function " + name + "(" + argumentList + ") {" +
         "var obj = this;" +
         // don't create a new object if we've already got one
         // (e.g. we were called with `new`)
