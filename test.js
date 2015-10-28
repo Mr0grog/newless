@@ -72,19 +72,21 @@ describe("newless", function() {
     expect(Construct.staticFunction).to.equal(BareConstructor.staticFunction);
     expect(Construct.someProperty).to.equal(15);
   });
-  
+
   it("should preserve the constructor's `length` property.", function() {
     var BareConstructor = function(a, b, c) {};
     var Construct = newless(BareConstructor);
     expect(Construct.length).to.equal(BareConstructor.length);
   });
-  
+
   //---- Tests for ES 2015 classes. Skipped if syntax is not supported. ----
   var classIt = it;
   try {
     var ES2015Class = Function("",
+      "\"use strict\";" +
       "class ES2015Class {" +
-        "constructor() { this.constructed = true; }" +
+        "constructor(a, b) { this.constructed = true; this.argA = a; this.argB = b; }" +
+        "something() { return true; }" +
       "};" +
       "return ES2015Class;")();
   }
@@ -92,10 +94,24 @@ describe("newless", function() {
     console.log("This JS engine does not support class syntax; skipping related tests.");
     var classIt = it.skip;
   }
-  
+
   classIt("should work with ES2015 class syntax.", function() {
     var NewlessClass = newless(ES2015Class);
     var object = NewlessClass();
     expect(object.constructed).to.be.true
+  });
+
+  classIt("should send correct arguments with ES2015 class syntax.", function() {
+    var NewlessClass = newless(ES2015Class);
+    var object = NewlessClass(1, 2);
+    expect(object.argA).to.equal(1);
+    expect(object.argB).to.equal(2);
+  });
+
+  classIt("should include all methods with ES2015 class syntax.", function() {
+    var NewlessClass = newless(ES2015Class);
+    var object = NewlessClass();
+    expect(object).to.have.property("something");
+    expect(object.something).to.be.a("function");
   });
 });
