@@ -20,10 +20,18 @@
   }());
 
   // If an engine does not yet implement the spread operator, emulate it by
-  // binding the arguments passed to the constructor.
+  // constructing a function on the fly. That's pretty bad for performance, but
+  // I don't see a better way here.
   function newWithArguments(constructor, args) {
-    var bindArgs = [null].concat([].slice.call(args));
-    return new (constructor.bind.apply(constructor, bindArgs));
+    var instantiator = "'use strict'; return new constructor(";
+    for (var i = 0, len = args.length; i < len; i++) {
+      if (i > 0) {
+        instantiator += ",";
+      }
+      instantiator += "args[" + i + "]";
+    }
+    instantiator += ");";
+    return Function("constructor, args", instantiator)(constructor, args);
   }
 
   var newless = function(constructor) {
@@ -40,9 +48,10 @@
       "var newlessConstructor = function " + name + "(" + argumentList.join(",") + ") {" +
         // ES2015 classes can't have their constructors called with `apply`, so
         // we *must* use the `new` keyword. The only way to do this is either
-        // with the spread operator or by emulating it with function.bind.
-        // Some shipping engines implement classes but not spread, so limit use
-        // of spread emulation by only running it on things that are classes.
+        // with the spread operator or with some really slow and funky code to
+        // emulate it. Unfortunately, some shipping engines implement classes
+        // but not spread, so try and limit our use of really slow emulation by
+        // only running it on things that appear to be classes.
         // NOTE: the only known implementations (V8 in NodeJS 4) that
         // support the class syntax but not spread happen to return the full
         // class declaration in `Class.toString()`, luckily allowing us to
