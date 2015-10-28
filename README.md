@@ -20,6 +20,22 @@ var instance = MyObject("Hello");
 instance.something; // "Hello"
 ```
 
+And, of course, on new ES 6/2015 style classes:
+
+```js
+var MyObject = newless(class {
+  constructor(something) {
+    this.setSomething(something);
+  }
+  setSomething(value) {
+    this.something = value;
+  }
+});
+
+var instance = MyObject("Hello");
+instance.something; // "Hello"
+```
+
 You can also use it with existing constructors from other libraries without
 disrupting them:
 
