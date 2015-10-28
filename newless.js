@@ -1,6 +1,15 @@
 (function(global) {
   "use strict";
 
+  var supportsSpread = false;
+  try {
+    supportsSpread = !!Function(
+      "constructor, args",
+      "'use strict'; return new constructor(...args);"
+    );
+  }
+  catch (error) {}
+
   // ulta-simple Object.create polyfill (only does half the job)
   var create = Object.create || (function() {
     var Maker = function(){};
@@ -10,27 +19,19 @@
     }
   }());
 
-  // If an engine does not yet implement the spread operator, fall back to
-  // emulating it by constructing a function on the fly. That's pretty bad for
-  // performance, but I don't see a better way here.
-  try {
-    var newWithArguments = Function(
-      "constructor, args",
-      "return new constructor(...args);"
-    );
-  }
-  catch (error) {
-    newWithArguments = function(constructor, args) {
-      var instantiator = "'use strict'; return new constructor(";
-      for (var i = 0, len = args.length; i < len; i++) {
-        if (i > 0) {
-          instantiator += ",";
-        }
-        instantiator += "args[" + i + "]";
+  // If an engine does not yet implement the spread operator, emulate it by
+  // constructing a function on the fly. That's pretty bad for performance, but
+  // I don't see a better way here.
+  function newWithArguments(constructor, args) {
+    var instantiator = "'use strict'; return new constructor(";
+    for (var i = 0, len = args.length; i < len; i++) {
+      if (i > 0) {
+        instantiator += ",";
       }
-      instantiator += ");";
-      return Function("constructor, args", instantiator)(constructor, args);
+      instantiator += "args[" + i + "]";
     }
+    instantiator += ");";
+    return Function("constructor, args", instantiator)(constructor, args);
   }
 
   var newless = function(constructor) {
@@ -51,20 +52,26 @@
         // emulate it. Unfortunately, some shipping engines implement classes
         // but not spread, so try and limit our use of really slow emulation by
         // only running it on things that appear to be classes.
-        // CAVEAT: this will break: `newless(SomeClass.prototype.constructor)`
-        (constructor.toString().indexOf("class ") === 0
-          ? "return newWithArguments(constructor, arguments);"
-          : ("var obj = this;" +
-            // don't create a new object if we've already got one
-            // (e.g. we were called with `new`)
-            "if (!(this instanceof newlessConstructor)) {" +
-              "obj = create(newlessConstructor.prototype);" +
-            "}" +
-            // run the original constructor
-            "var returnValue = constructor.apply(obj, arguments);" +
-            // if we got back an object (and not null), use it as the return value
-            "return (typeof returnValue === 'object' && returnValue) || obj;")
-        ) +
+        // NOTE: the only known implementations (V8 in NodeJS 4) that
+        // support the class syntax but not spread happen to return the full
+        // class declaration in `Class.toString()`, luckily allowing us to
+        // differentiate. This isn't universal or by spec, though.
+        (supportsSpread
+          ? "return new constructor(...arguments);"
+          : (constructor.toString().indexOf("class") === 0
+            ? "return newWithArguments(constructor, arguments);"
+            : ("var obj = this;" +
+              // don't create a new object if we've already got one
+              // (e.g. we were called with `new`)
+              "if (!(this instanceof newlessConstructor)) {" +
+                "obj = create(newlessConstructor.prototype);" +
+              "}" +
+              // run the original constructor
+              "var returnValue = constructor.apply(obj, arguments);" +
+              // if we got back an object (and not null), use it as the return value
+              "return (typeof returnValue === 'object' && returnValue) || obj;")
+            )
+          ) +
       "};" +
       "return newlessConstructor;")(constructor, create, newWithArguments);
     newlessConstructor.prototype = constructor.prototype;
