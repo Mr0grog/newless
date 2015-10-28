@@ -57,7 +57,8 @@
         // class declaration in `Class.toString()`, luckily allowing us to
         // differentiate. This isn't universal or by spec, though.
         (supportsSpread
-          ? "return new constructor(...arguments);"
+          // NOTE: the arguments object can't be used w/ spread in Firefox
+          ? "return new constructor(...([].slice.call(arguments)));"
           : (constructor.toString().indexOf("class") === 0
             ? "return newWithArguments(constructor, arguments);"
             : ("var obj = this;" +
