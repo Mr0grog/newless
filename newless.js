@@ -6,62 +6,75 @@
     ? Symbol("trueConstructor")
     : "__newlessTrueConstructor__";
 
-  var SUPPORTS_CLASS = false;
-  try {
-    SUPPORTS_CLASS = !!Function("", "'use strict'; class Test {};");
+  // test whether a given new syntax is supported
+  function isSyntaxSupported(example) {
+    try { return !!Function("", "'use strict';" + example); }
+    catch (error) { return false; }
   }
-  catch (error) {}
 
-  var MAKE_CLASS =
-    "class placeholder extends target {};" +
-    "Object.setPrototypeOf(placeholder, constructor);" +
-    "placeholder.prototype.constructor = constructor;";
-  var MAKE_FUNCTION =
-    "function placeholder() {" +
-      "var returnValue = constructor.apply(this, arguments);" +
-      "return (typeof returnValue == 'object' && returnValue) || this;" +
-    "};" +
-    "placeholder.prototype = target.prototype;";
+  var getPrototype = Object.getPrototypeOf || function getPrototype(object) {
+    return object.__proto__ ||
+      (object.constructor && object.constructor.prototype) ||
+      Object.prototype;
+  };
+
+  var setPrototype = Object.setPrototypeOf ||
+    function setPrototypeOf(object, newPrototype) {
+      object.__proto__ = newPrototype;
+    };
 
   // Create a function that roughly matches Reflect.construct (though we can't
   // mimic the third argument).
-  var construct = null;//global.Reflect && global.Reflect.construct;
-  if (!construct) {
-    // Use the spread operator if supported
-    try {
-      // construct = Function("constructor, args",
-      //   "'use strict'; return new constructor(...([].slice.call(args)));");
-      construct = Function("constructor, args, target",
+  var construct = global.Reflect && global.Reflect.construct || (function() {
+    if (isSyntaxSupported("class Test {}")) {
+      // The spread operator is *dramatically faster, so use it if we can:
+      // http://jsperf.com/new-via-spread-vs-dynamic-function/4
+      var supportsSpread = isSyntaxSupported("Object(...[{}])");
+
+      return Function("constructor, args, target",
         "'use strict';" +
         "target = target || constructor;" +
 
-        (SUPPORTS_CLASS ? MAKE_CLASS : MAKE_FUNCTION) +
+        // extend target so the right prototype is constructed (or nearly the
+        // right one; ideally we'd do instantiator.prototype = target.prototype,
+        // but a class's prototype property is immutable)
+        "class instantiator extends target {};" +
+        // but ensure the logic is `constructor` for ES2015-compliant engines
+        "Object.setPrototypeOf(instantiator, constructor);" +
+        // ...and for Safari 9
+        "instantiator.prototype.constructor = constructor;" +
 
-        "var returnValue = new placeholder(...([].slice.call(args)));" +
-        "Object.setPrototypeOf(returnValue, target.prototype);" +
-        "return returnValue;");
+        (supportsSpread ?
+          "var value = new instantiator(...([].slice.call(args)));" :
+
+          // otherwise, create a dynamic function in order to use `new`
+          "var argList = '';" +
+          "for (var i = 0, len = args.length; i < len; i++) {" +
+            "if (i > 0) argList += ',';" +
+            "argList += 'args[' + i + ']';" +
+          "}" +
+          "var constructCall = Function('constructor, args'," +
+            "'return new constructor(' + argList + ');'" +
+          ");" +
+          "var value = constructCall(constructor, args);"
+        ) +
+
+        // fix up the prototype so it matches the intended one, not one who's
+        // prototype is the intended one :P
+        "Object.setPrototypeOf(value, target.prototype);" +
+        "return value;"
+      );
     }
-    // ...otherwise we'll get a syntax error; fall back to a dynamic function
-    catch(error) {
-      construct = function construct(constructor, args, target) {
-        var instantiator = "'use strict';" +
-          "target = target || constructor;" +
-          (SUPPORTS_CLASS ? MAKE_CLASS : MAKE_FUNCTION) +
-          "var returnValue = new placeholder(";
-        for (var i = 0, len = args.length; i < len; i++) {
-          if (i > 0) {
-            instantiator += ",";
-          }
-          instantiator += "args[" + i + "]";
-        }
-        instantiator += ");";
-        instantiator +=
-          "if (Object.setPrototypeOf) { Object.setPrototypeOf(returnValue, target.prototype); }" +
-          "return returnValue;";
-        return Function("constructor, args, target", instantiator)(constructor, args, target);
-      };
+    else {
+      var instantiator = function() {};
+      return function construct(constructor, args, target) {
+        instantiator.prototype = (target || constructor).prototype;
+        var instance = new instantiator();
+        var value = constructor.apply(instance, args);
+        return (typeof value === "object" && value) || instance;
+      }
     }
-  }
+  })();
 
   // ES2015 class methods are non-enumerable; we need a helper for copying them.
   var SKIP_PROPERTIES = ["arguments", "caller", "length", "name", "prototype"];
@@ -85,20 +98,6 @@
         destination[property] = source[property];
       }
     }
-  }
-
-  // If an engine does not yet implement the spread operator, emulate it by
-  // constructing a function on the fly.
-  function newWithArguments(constructor, args) {
-    var instantiator = "'use strict'; return new constructor(";
-    for (var i = 0, len = args.length; i < len; i++) {
-      if (i > 0) {
-        instantiator += ",";
-      }
-      instantiator += "args[" + i + "]";
-    }
-    instantiator += ");";
-    return Function("constructor, args", instantiator)(constructor, args);
   }
 
   var newless = function(constructor) {
@@ -162,33 +161,22 @@
 
     copyProperties(constructor, newlessConstructor);
     newlessConstructor.prototype = constructor.prototype;
-    newlessConstructor.prototype.constructor = constructor;
-    // newlessConstructor.prototype.constructor = newlessConstructor;
-    // NOTE: `newlessConstructor.prototype.constructor` === `constructor`!
+    // NOTE: *usually* the below will already be true, but we ensure it here.
     // Safari 9 requires this for the `super` keyword to work. Newer versions
     // of WebKit and other engines do not. Instead, they use the constructor's
-    // prototype chain (see below).
+    // prototype chain (which correct by ES2015 spec) (see below).
+    newlessConstructor.prototype.constructor = constructor;
 
-    // the underlying constructor implementation needs to be tracked so that
-    // prototypes can be set appropriately to support calling super()
+    // for ES2015 classes, we need to make sure the constructor's prototype
+    // is the super class's constructor. Further, optimize performance by
+    // pointing at the actual constructor implementation instead of the
+    // newless wrapper (in the case that it is wrapped by newless).
     newlessConstructor[TRUE_CONSTRUCTOR] = constructor;
-
-    // The `super` keyword works by examining the constructor's prototype chain.
-    // Because there is no way for newless to apply the logic of a super
-    // constructor created via class syntax from the outside (because the `new`
-    // keyword *must* be used), the newless constructor's prototype must not
-    // point to a newless-wrapped constructor, but to the underlying
-    // constructor itself.
-    // NOTE: this can be better handled with Reflect.construct, but that's not
-    // supported everywhere classes are so it can't be depended upon.
-    if (Object.getPrototypeOf && Object.setPrototypeOf) {
-      var superConstructor = Object.getPrototypeOf(constructor);
-      Object.setPrototypeOf(newlessConstructor, superConstructor);
-      if (superConstructor[TRUE_CONSTRUCTOR]) {
-        Object.setPrototypeOf(
-          constructor, superConstructor[TRUE_CONSTRUCTOR]);
-        Object.setPrototypeOf(newlessConstructor, superConstructor[TRUE_CONSTRUCTOR]);
-      }
+    var superConstructor = getPrototype(constructor);
+    var realSuperConstructor = superConstructor[TRUE_CONSTRUCTOR];
+    setPrototype(newlessConstructor, realSuperConstructor || superConstructor);
+    if (realSuperConstructor) {
+      setPrototype(constructor, realSuperConstructor);
     }
 
     return newlessConstructor;
