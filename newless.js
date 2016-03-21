@@ -164,7 +164,7 @@
     // NOTE: *usually* the below will already be true, but we ensure it here.
     // Safari 9 requires this for the `super` keyword to work. Newer versions
     // of WebKit and other engines do not. Instead, they use the constructor's
-    // prototype chain (which correct by ES2015 spec) (see below).
+    // prototype chain (which is correct by ES2015 spec) (see below).
     newlessConstructor.prototype.constructor = constructor;
 
     // for ES2015 classes, we need to make sure the constructor's prototype

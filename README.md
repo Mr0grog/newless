@@ -49,5 +49,5 @@ var user = User({name: "Jennifer"});
 
 ## License
 
-Newless is open source software. It is (c) 2013-2015 Rob Brackett and licensed under
+Newless is open source software. It is (c) 2013-2016 Rob Brackett and licensed under
 the BSD license. The full license text is in the `LICENSE` file.
