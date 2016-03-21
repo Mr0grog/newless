@@ -1,17 +1,18 @@
 (function(global) {
   "use strict";
 
-  // This property newless constructors points to the underlying implementation.
+  // Used to track the original wrapped constructor on a newless instance
   var TRUE_CONSTRUCTOR = global.Symbol
     ? Symbol("trueConstructor")
     : "__newlessTrueConstructor__";
 
-  // test whether a given new syntax is supported
+  // Test whether a given new syntax is supported
   function isSyntaxSupported(example) {
     try { return !!Function("", "'use strict';" + example); }
     catch (error) { return false; }
   }
 
+  // Polyfills for get/set prototype
   var getPrototype = Object.getPrototypeOf || function getPrototype(object) {
     return object.__proto__ ||
       (object.constructor && object.constructor.prototype) ||
@@ -23,8 +24,7 @@
       object.__proto__ = newPrototype;
     };
 
-  // Create a function that roughly matches Reflect.construct (though we can't
-  // mimic the third argument).
+  // Polyfill for Reflect.construct
   var construct = global.Reflect && global.Reflect.construct || (function() {
     if (isSyntaxSupported("class Test {}")) {
       // The spread operator is *dramatically faster, so use it if we can:
@@ -37,9 +37,9 @@
 
         // extend target so the right prototype is constructed (or nearly the
         // right one; ideally we'd do instantiator.prototype = target.prototype,
-        // but a class's prototype property is immutable)
+        // but a class's prototype property is not writable)
         "class instantiator extends target {};" +
-        // but ensure the logic is `constructor` for ES2015-compliant engines
+        // but ensure the *logic* is `constructor` for ES2015-compliant engines
         "Object.setPrototypeOf(instantiator, constructor);" +
         // ...and for Safari 9
         "instantiator.prototype.constructor = constructor;" +
@@ -101,10 +101,10 @@
   }
 
   var newless = function(constructor) {
-    // in order to preserve constructor name, use the Function constructor
     var name = constructor.name || "";
 
-    // create a list of arguments so that original constructor's `length` property is kept
+    // create a list of arguments so that the newless constructor's `length`
+    // is the same as the original constructor's
     var argumentList = [];
     for (var i = constructor.length; i > 0; i--) {
       argumentList.unshift("a" + i);
@@ -122,7 +122,8 @@
     // otherwise unalterable properties like name and arguments.
     var newlessConstructor = Function("constructor, construct",
       "var requiresNew = " + usesClassSyntax + ";" +
-      "var newlessConstructor = function " + name + "(" + argumentList.join(",") + ") {" +
+      "var newlessConstructor = function " + name +
+        "(" + argumentList.join(",") + ") {" +
         // Inheritance with plain functions requires calling the "super"
         // constructor via `superConstructor.call(this, arg1, arg2...)`. In
         // this situation, we want to try and preserve that `this` instead of
@@ -150,12 +151,11 @@
             "requiresNew = true;" +
           "}" +
         "}" +
-        "var newTarget = (this instanceof newlessConstructor) ? this.constructor : undefined;" +
-        "if (newTarget) {" +
+        // make a reasonably good replacement for `new.target` which is a
+        // syntax error in older engines
+        "var newTarget = (this instanceof newlessConstructor) ? " +
+                         "this.constructor : constructor;" +
         "return construct(constructor, arguments, newTarget);" +
-        "} else {" +
-        "return construct(constructor, arguments);" +
-        "}" +
       "};" +
       "return newlessConstructor;")(constructor, construct);
 
