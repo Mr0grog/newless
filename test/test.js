@@ -1,7 +1,7 @@
 // if testing via the CLI, use the --require options to grab the helper:
 // `mocha --require test_helper_node.js`
 
-describe("newless", function() {
+describe("Newless functions", function() {
   it("should make a constructor work without `new`", function() {
     var Construct = newless(function() {});
     var obj = Construct();
@@ -72,30 +72,60 @@ describe("newless", function() {
     expect(Construct.staticFunction).to.equal(BareConstructor.staticFunction);
     expect(Construct.someProperty).to.equal(15);
   });
-  
+
   it("should preserve the constructor's `length` property.", function() {
     var BareConstructor = function(a, b, c) {};
     var Construct = newless(BareConstructor);
     expect(Construct.length).to.equal(BareConstructor.length);
   });
-  
-  //---- Tests for ES 2015 classes. Skipped if syntax is not supported. ----
-  var classIt = it;
-  try {
-    var ES2015Class = Function("",
-      "class ES2015Class {" +
-        "constructor() { this.constructed = true; }" +
-      "};" +
-      "return ES2015Class;")();
-  }
-  catch(error) {
-    console.log("This JS engine does not support class syntax; skipping related tests.");
-    var classIt = it.skip;
-  }
-  
-  classIt("should work with ES2015 class syntax.", function() {
-    var NewlessClass = newless(ES2015Class);
-    var object = NewlessClass();
-    expect(object.constructed).to.be.true
+
+  it("should allow calling “super” constructors via `call/apply`.", function() {
+    function create(prototype) {
+      function constructor(){};
+      constructor.prototype = prototype;
+      return new constructor();
+    }
+
+    var superInstance, subInstance;
+    var SuperConstructor = newless(function() {
+      this.setBySuper = true;
+      superInstance = this;
+    });
+    var SubImplementation = function() {
+      SuperConstructor.call(this);
+      this.setBySub = true;
+      subInstance = this;
+    };
+    SubImplementation.prototype = create(SuperConstructor.prototype);
+    var SubConstructor = newless(SubImplementation);
+
+    var obj = SubConstructor();
+
+    expect(obj).to.be.a(SubConstructor);
+    expect(obj).to.be.a(SuperConstructor);
+    expect(obj).to.have.property("setBySuper", true);
+    expect(obj).to.have.property("setBySub", true);
+    expect(superInstance).to.equal(subInstance);
   });
 });
+
+//---- Load tests for ES 2015 classes only if syntax is supported. ----
+var warn = console.warn || console.log;
+try {
+  var ES2015Class = Function("",
+    "\"use strict\";" +
+    "class ES2015Class { constructor() {} };")();
+
+  if (typeof document !== "undefined" && document.write) {
+    document.write("<sc" + "ript src='test-es2015-class.js'></script>");
+  }
+  else if (typeof require !== "undefined") {
+    require("./test-es2015-class.js");
+  }
+  else {
+    warn("This JS engine supports class syntax, but the appropriate tests could not be loaded.");
+  }
+}
+catch(error) {
+  warn("This JS engine does not support class syntax; skipping related tests.");
+}

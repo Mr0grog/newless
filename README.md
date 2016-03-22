@@ -20,6 +20,22 @@ var instance = MyObject("Hello");
 instance.something; // "Hello"
 ```
 
+And, of course, on new ES 6/2015 style classes:
+
+```js
+var MyObject = newless(class {
+  constructor(something) {
+    this.setSomething(something);
+  }
+  setSomething(value) {
+    this.something = value;
+  }
+});
+
+var instance = MyObject("Hello");
+instance.something; // "Hello"
+```
+
 You can also use it with existing constructors from other libraries without
 disrupting them:
 
@@ -33,5 +49,5 @@ var user = User({name: "Jennifer"});
 
 ## License
 
-Newless is open source software. It is (c) 2013-2015 Rob Brackett and licensed under
+Newless is open source software. It is (c) 2013-2016 Rob Brackett and licensed under
 the BSD license. The full license text is in the `LICENSE` file.

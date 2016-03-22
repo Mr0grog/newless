@@ -12,7 +12,7 @@
     "expect.js": "~0.2.0"
   },
   "scripts": {
-    "test": "mocha --require test_helper_node.js"
+    "test": "mocha --require test/test_helper_node.js test/test.js"
   },
   "repository": {
     "type": "git",
