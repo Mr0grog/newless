@@ -142,4 +142,22 @@ describe("Newless ES 2015 classes", function() {
     expect(instanceSub).to.equal(instanceBase);
   });
 
+  it("should update a function's `this` when inheriting from a class constructor", function() {
+    // NOTE: this does *not* mean `this` in SubClass === `this` in BaseClass.
+    // We *are* trying to come as close to that as we can, though.
+    
+    var BaseClass = newless(class {
+      constructor() {
+        this.baseInstanceProperty = true;
+      }
+    });
+
+    var SubClass = function() {
+      BaseClass.call(this);
+    };
+    SubClass.prototype = Object.create(BaseClass.prototype);
+
+    expect(new SubClass()).to.have.property("baseInstanceProperty");
+  });
+
 });

@@ -47,6 +47,55 @@ var User = newless(Backbone.Model.extend({...}));
 var user = User({name: "Jennifer"});
 ```
 
+## Caveats
+
+When an ES 2015 class is wrapped with Newless, you should be somewhat careful in trying to call it with a custom context via `Class.call(customContext)` or `Class.apply(customContext)`. Because of limitations imposed by the class syntax, calling a Newless ES 2015 class will always return a new object. If the custom context you provide is one that includes the Newless class anywhere in its prototype chain, the returned object will have the exact same prototype chain as the custom context, but it will be separate object.
+
+This is generally only an issue when creating a function constructor that inherits from a class constructor. Inheriting functions constructors usually works like this:
+
+```js
+function SubConstructor() {
+  SuperConstructor.call(this);
+  this.x = "some instance value";
+}
+SubConstructor.prototype = Object.create(SuperConstructor.prototype);
+```
+
+This works just fine when `SuperConstructor` is a normal constructor function or a Newless constructor function. If `SuperConstructor` is a class, this doesn’t work at all. However, if `SuperConstructor` is a *Newless* class, the are some minor oddities:
+
+```js
+var superInstance;
+var SuperConstructor = newless(class {
+  constructor() {
+    superInstance = this;
+    this.y = "super constructor instance property";
+  }
+});
+
+var instance = new SubConstructor();
+
+// as you’d normally expect, all the properties are accessible:
+instance.x === "some instance value";
+instance.y === "super constructor instance property";
+
+// ...but technically, the `this` in the two constructors is not the same!
+instance !== superInstance;
+Object.getPrototypeOf(instance) === superInstance;
+```
+
+You’ll notice above that the `this` used in `SuperConstructor` has become the prototype of the `this` used in `SubConstructor`. That’s done to make things work as smoothly as possible within the constraints created by ES 2015’s class syntax. You can avoid this slight oddity by instead coding `SubConstructor` like so:
+
+```js
+function SubConstructor() {
+  var instance = SuperConstructor.call(this);
+  instance.x = "some instance value";
+  return instance;
+}
+SubConstructor.prototype = Object.create(SuperConstructor.prototype);
+```
+
+Note that, instead of working with `this`, you work with the return value of calling `SuperConstructor`. If you already code inheritance this way, everything will work 100% fine. If you don’t this will *mostly* work fine, but you could occasionally hit issues where `this` must be the same object in sub- and super-constructors.
+
 ## License
 
 Newless is open source software. It is (c) 2013-2016 Rob Brackett and licensed under
