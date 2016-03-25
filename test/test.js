@@ -52,8 +52,9 @@ describe("Newless functions", function() {
   });
 
   it("should preserve a constructor's name", function() {
-    var Construct = newless(function Maker() {});
-    expect(Construct.name).to.equal("Maker");
+    var implementation = function Maker() {};
+    var Construct = newless(implementation);
+    expect(Construct.name).to.equal(implementation.name);
   });
 
   it("should preserve a constructor's displayName", function() {

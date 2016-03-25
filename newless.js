@@ -48,6 +48,8 @@
           "var value = new instantiator(...([].slice.call(args)));" :
 
           // otherwise, create a dynamic function in order to use `new`
+          // Note using `function.bind` would be simpler, but is much slower:
+          // http://jsperf.com/new-operator-with-dynamic-function-vs-bind
           "var argList = '';" +
           "for (var i = 0, len = args.length; i < len; i++) {" +
             "if (i > 0) argList += ',';" +
@@ -120,7 +122,7 @@
     // Create and call a function that returns a wrapped constructor that can
     // be called without new. This is needed in order to give the wrapper some
     // otherwise unalterable properties like name and arguments.
-    var newlessConstructor = Function("constructor, construct",
+    var newlessConstructor = Function("constructor, construct, setPrototype",
       "var requiresNew = " + usesClassSyntax + ";" +
       "var newlessConstructor = function " + name +
         "(" + argumentList.join(",") + ") {" +
@@ -155,9 +157,14 @@
         // syntax error in older engines
         "var newTarget = (this instanceof newlessConstructor) ? " +
                          "this.constructor : constructor;" +
-        "return construct(constructor, arguments, newTarget);" +
+        "var returnValue = construct(constructor, arguments, newTarget);" +
+        // best effort to make things easy for functions inheriting from classes
+        "if (this instanceof newlessConstructor) {" +
+          "setPrototype(this, returnValue);" +
+        "}" +
+        "return returnValue;" +
       "};" +
-      "return newlessConstructor;")(constructor, construct);
+      "return newlessConstructor;")(constructor, construct, setPrototype);
 
     copyProperties(constructor, newlessConstructor);
     newlessConstructor.prototype = constructor.prototype;
