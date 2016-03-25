@@ -53,7 +53,7 @@ var user = User({name: "Jennifer"});
 
 When an ES 2015 class is wrapped with Newless, you should be somewhat careful in trying to call it with a custom context via `Class.call(customContext)` or `Class.apply(customContext)`. Because of limitations imposed by the class syntax, calling a Newless ES 2015 class will always return a new object. If the custom context you provide is one that includes the Newless class anywhere in its prototype chain, the returned object will have the exact same prototype chain as the custom context, but it will be separate object.
 
-This is generally only an issue when creating a function constructor that inherits from a class constructor. Inheriting functions constructors usually works like this:
+This is generally only an issue when creating a function constructor that inherits from a class constructor. Inheriting function constructors usually works like this:
 
 ```js
 function SubConstructor() {
@@ -96,7 +96,7 @@ function SubConstructor() {
 SubConstructor.prototype = Object.create(SuperConstructor.prototype);
 ```
 
-Note that, instead of working with `this`, you work with the return value of calling `SuperConstructor`. If you already code inheritance this way, everything will work 100% fine. If you don’t this will *mostly* work fine, but you could occasionally hit issues where `this` must be the same object in sub- and super-constructors.
+Note that, instead of working with `this`, you work with the return value of calling `SuperConstructor`. If you already code inheritance this way, everything works fine. If you don’t, making this change could help you avoid some rare edge cases where you might run into trouble.
 
 ## License
 
