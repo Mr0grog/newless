@@ -3,13 +3,10 @@
   "version": "0.2.0",
   "description": "Modify constructors to function without `new`.",
   "main": "newless.js",
-  "dependencies": {
-    "expect.js": "^0.3.1",
-    "mocha": "^2.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "mocha": "~1.9.0",
-    "expect.js": "~0.2.0"
+    "mocha": "^2.4.5",
+    "expect.js": "^0.3.1"
   },
   "scripts": {
     "test": "mocha --require test/test_helper_node.js test/test.js"
