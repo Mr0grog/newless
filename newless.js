@@ -119,27 +119,34 @@
     // might still use class syntax.
     var usesClassSyntax = constructor.toString().substr(0, 5) === "class";
 
+    // code to call a *function* constructor with the current `this` context
+    var applyThisAndReturn =
+      "var returnValue = constructor.apply(this, arguments);" +
+      "return (typeof returnValue === 'object' && returnValue) || this;";
+
     // Create and call a function that returns a wrapped constructor that can
     // be called without new. This is needed in order to give the wrapper some
     // otherwise unalterable properties like name and arguments.
     var newlessConstructor = Function("constructor, construct, setPrototype",
-      "var requiresNew = " + usesClassSyntax + ";" +
+      "var requiresNew = " + (usesClassSyntax ? true : null) + ";" +
       "var newlessConstructor = function " + name +
         "(" + argumentList.join(",") + ") {" +
-        // Inheritance with plain functions requires calling the "super"
-        // constructor via `superConstructor.call(this, arg1, arg2...)`. In
-        // this situation, we want to try and preserve that `this` instead of
-        // constructing a new one; checking the above call's return value is
-        // not common practice and lot of constructors would break if we
-        // returned a different object instance.
+        // If called with an already valid `this`, preserve that `this` value
+        // in the super-type's constructor whenever possible. With function
+        // constructors (as opposed to class constructors), it's possible to
+        // alter the instance before calling the super constructor--so it's
+        // important to preserve that instance if at all possible.
         "if (!requiresNew && this instanceof newlessConstructor) {" +
-          // Not all engines provide enough clues to set `requiresNew` properly.
-          // Even if false, it may still require `new` and throw an error.
+          // requiresNew = `false` indicates we know the `new` operator isn't
+          // necessary for this constructor, but `null` indicates uncertainty,
+          // so the call needs to handle potential errors the first time in
+          // order to determine whether `new` is definitely required.
+          "if (requiresNew === false) {" +
+            applyThisAndReturn +
+          "}" +
           "try {" +
-            // run the original constructor
-            "var returnValue = constructor.apply(this, arguments);" +
-            // if we got back a non-null object, use it as the return value
-            "return (typeof returnValue === 'object' && returnValue) || this;" +
+            "requiresNew = false;" +
+            applyThisAndReturn +
           "}" +
           "catch (error) {" +
             // Do our best to only capture errors triggred by class syntax.
