@@ -1,5 +1,10 @@
 "use strict";
 
+if (typeof require !== "undefined") {
+  var newless = require("../newless.js");
+  var expect = require("expect.js");
+}
+
 describe("Newless ES 2015 classes", function() {
 
   it("should work with ES2015 class syntax", function() {
@@ -145,7 +150,7 @@ describe("Newless ES 2015 classes", function() {
   it("should update a function's `this` when inheriting from a class constructor", function() {
     // NOTE: this does *not* mean `this` in SubClass === `this` in BaseClass.
     // We *are* trying to come as close to that as we can, though.
-    
+
     var BaseClass = newless(class {
       constructor() {
         this.baseInstanceProperty = true;

@@ -1,5 +1,7 @@
-// if testing via the CLI, use the --require options to grab the helper:
-// `mocha --require test_helper_node.js`
+if (typeof require !== "undefined") {
+  var newless = require("../newless.js");
+  var expect = require("expect.js");
+}
 
 describe("Newless functions", function() {
   it("should make a constructor work without `new`", function() {
@@ -111,14 +113,14 @@ describe("Newless functions", function() {
 });
 
 //---- Load tests for ES 2015 classes only if syntax is supported. ----
-var warn = console.warn || console.log;
+var warn = function(){(console.warn || console.log).apply(console, arguments);};
 try {
   var ES2015Class = Function("",
     "\"use strict\";" +
     "class ES2015Class { constructor() {} };")();
 
   if (typeof document !== "undefined" && document.write) {
-    document.write("<sc" + "ript src='test-es2015-class.js'></script>");
+    document.write("<sc" + "ript src='/test/test-es2015-class.js'></script>");
   }
   else if (typeof require !== "undefined") {
     require("./test-es2015-class.js");
@@ -128,5 +130,5 @@ try {
   }
 }
 catch(error) {
-  warn("This JS engine does not support class syntax; skipping related tests.");
+  warn(console,"This JS engine does not support class syntax; skipping related tests.");
 }
