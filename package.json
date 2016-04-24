@@ -19,7 +19,7 @@
     "constructor"
   ],
   "author": "Rob Brackett <rob@robbrackett.com>",
-  "license": "BSD",
+  "license": "BSD-3-Clause",
   "readmeFilename": "README.md",
   "gitHead": "20030ae9225b14eda740819146dd051efc5170b1"
 }
