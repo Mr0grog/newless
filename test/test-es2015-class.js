@@ -145,7 +145,7 @@ describe("Newless ES 2015 classes", function() {
   it("should update a function's `this` when inheriting from a class constructor", function() {
     // NOTE: this does *not* mean `this` in SubClass === `this` in BaseClass.
     // We *are* trying to come as close to that as we can, though.
-    
+
     var BaseClass = newless(class {
       constructor() {
         this.baseInstanceProperty = true;
@@ -160,4 +160,48 @@ describe("Newless ES 2015 classes", function() {
     expect(new SubClass()).to.have.property("baseInstanceProperty");
   });
 
+});
+
+describe("ES 2015 arguments", function() {
+  function source(fn, length) {
+    return fn.toString().replace(/\s/g, "").slice(0, length)
+  }
+
+  it("should retain argument names with default values", function() {
+    var Construct = newless(function(a=5, b=Infinity, c=[]) {});
+    var signature = source(Construct, 29);
+    expect(signature).to.equal("function(a=5,b=Infinity,c=[])");
+  });
+
+  it("Should work with destructuring.", function() {
+    var withDestructuredArgs = newless(function({a, b}, [c, d]){});
+    var signature = source(withDestructuredArgs, 21);
+    expect(signature).to.equal("function({a,b},[c,d])");
+  });
+
+  it("Should work with parentheses in default values.", function() {
+    var withFunnyArgs = newless(function(a="hello(name)"){});
+    var signature = source(withFunnyArgs, 21);
+    expect(signature).to.equal("function(a=\"hello(name)\")");
+
+    var withMethodCallArgs = newless(function(value=Math.random()){});
+    var signature = source(withMethodCallArgs, 29);
+    expect(signature).to.equal("function(value=Math.random())");
+  });
+
+  it("Should work with functions in default values.", function() {
+    var withFunnyArgs = newless(function(a=function(b){return b;}){});
+    var signature = source(withFunnyArgs, 33);
+    expect(signature).to.equal("function(a=function(b){return b;})");
+  });
+
+  it("Should work with arrow functions in default values.", function() {
+    var withFunnyArgs = newless(function(a=(input) => input * 2){});
+    var signature = source(withFunnyArgs, 28);
+    expect(signature).to.equal("function(a=(input)=>input*2)");
+
+    withFunnyArgs = newless(function(a=(input) => { input * 2; }){});
+    signature = source(withFunnyArgs, 31);
+    expect(signature).to.equal("function(a=(input)=>{input*2;})");
+  });
 });

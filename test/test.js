@@ -108,6 +108,11 @@ describe("Newless functions", function() {
     expect(obj).to.have.property("setBySub", true);
     expect(superInstance).to.equal(subInstance);
   });
+
+  it("should retain argument names", function() {
+    var Construct = newless(function(a, b, c) {});
+    expect(Construct.toString().slice(0, 17)).to.equal("function(a, b, c)");
+  });
 });
 
 //---- Load tests for ES 2015 classes only if syntax is supported. ----
