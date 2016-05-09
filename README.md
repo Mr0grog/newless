@@ -96,7 +96,7 @@ function SubConstructor() {
 SubConstructor.prototype = Object.create(SuperConstructor.prototype);
 ```
 
-Note that, instead of working with `this`, you work with the return value of calling `SuperConstructor`. If you already code inheritance this way, everything works fine. If you don’t, making this change could help you avoid some rare edge cases where you might run into trouble.
+Note that, instead of working with `this`, you work with the return value of calling `SuperConstructor`. If you already code inheritance this way, everything will work fine. If you don’t, making this change could help you avoid some rare edge cases where you might run into trouble.
 
 ## License
 
