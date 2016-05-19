@@ -47,8 +47,8 @@ describe("Newless functions", function() {
     var Construct = newless(BareConstructor);
     var obj = Construct();
 
-    expect(Object.getPrototypeOf(obj)).to.equal(Construct.prototype);
-    expect(Object.getPrototypeOf(obj)).to.equal(BareConstructor.prototype);
+    expect(getPrototype(obj)).to.equal(Construct.prototype);
+    expect(getPrototype(obj)).to.equal(BareConstructor.prototype);
   });
 
   it("should preserve a constructor's name", function() {
@@ -108,6 +108,13 @@ describe("Newless functions", function() {
     expect(obj).to.have.property("setBySub", true);
     expect(superInstance).to.equal(subInstance);
   });
+  
+  // Test utilities
+  var getPrototype = Object.getPrototypeOf || function getPrototype(object) {
+    return object.__proto__ ||
+      (object.constructor && object.constructor.prototype) ||
+      Object.prototype;
+  };
 });
 
 //---- Load tests for ES 2015 classes only if syntax is supported. ----
