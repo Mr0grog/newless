@@ -33,6 +33,10 @@
 
       return Function("constructor, args, target",
         "'use strict';" +
+
+        "if (arguments.length === 3 && typeof target !== 'function')" +
+          "throw new TypeError(''+target+' is not a constructor');" +
+
         "target = target || constructor;" +
 
         // extend target so the right prototype is constructed (or nearly the
@@ -70,10 +74,17 @@
     else {
       var instantiator = function() {};
       return function construct(constructor, args, target) {
+        if (arguments.length === 3 && typeof target !== 'function')
+          throw new TypeError(''+target+' is not a constructor');
         instantiator.prototype = (target || constructor).prototype;
         var instance = new instantiator();
         var value = constructor.apply(instance, args);
-        return (typeof value === "object" && value) || instance;
+        if (typeof value === "object" && value) {
+          // we can do better if __proto__ is available (in some ES5 environments)
+          if (value.__proto__) value.__proto__ = (target || constructor).prototype;
+          return value;
+        }
+        return instance;
       }
     }
   })();
