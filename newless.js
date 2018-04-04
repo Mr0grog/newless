@@ -152,10 +152,12 @@
             // Do our best to only capture errors triggred by class syntax.
             // Unfortunately, there's no special error type for this and the
             // message is non-standard, so this is the best check we can do.
-            "if (!(error instanceof TypeError &&" +
-              " /class constructor/i.test(error.message))) {" +
-              "throw error;" +
-            "}" +
+            "if (!(error instanceof TypeError && (" +
+              "/class constructor/i.test(error.message) ||" +
+              "/use the 'new' operator/i.test(error.message)" + // Custom Elements v0 in Chrome
+              // TODO: there might be other error messages we need to catch,
+              // depending on engine and use case.
+            "))) {" +
             // mark this constructor as requiring `new` for next time
             "requiresNew = true;" +
           "}" +
