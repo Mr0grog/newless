@@ -158,6 +158,8 @@
               // TODO: there might be other error messages we need to catch,
               // depending on engine and use case.
             "))) {" +
+              "throw error;" +
+            "}" +
             // mark this constructor as requiring `new` for next time
             "requiresNew = true;" +
           "}" +
