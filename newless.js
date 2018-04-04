@@ -165,10 +165,12 @@
         // make a reasonably good replacement for `new.target` which is a
         // syntax error in older engines
         "var newTarget;" +
-        "if (" + supportsNewTarget + ") {" +
+        "var hasNewTarget = false;" +
+        "if (supportsNewTarget) {" +
           "eval('newTarget = new.target');" +
+          "if (newTarget) hasNewTarget = true;" +
         "}" +
-        "else {" +
+        "if ( !supportsNewTarget || !hasNewTarget ) {" +
           "newTarget = (this instanceof newlessConstructor) ?" +
              "this.constructor : constructor;" +
         "}" +
