@@ -1,5 +1,9 @@
 (function(global) {
   "use strict";
+  
+  var supportsSpread = isSyntaxSupported("Object(...[{}])");
+  var supportsClass = isSyntaxSupported("class Test {}")
+  var supportsNewTarget = isSyntaxSupported("new.target")
 
   // Used to track the original wrapped constructor on a newless instance
   var TRUE_CONSTRUCTOR = global.Symbol
@@ -26,11 +30,7 @@
 
   // Polyfill for Reflect.construct
   var construct = global.Reflect && global.Reflect.construct || (function() {
-    if (isSyntaxSupported("class Test {}")) {
-      // The spread operator is *dramatically faster, so use it if we can:
-      // http://jsperf.com/new-via-spread-vs-dynamic-function/4
-      var supportsSpread = isSyntaxSupported("Object(...[{}])");
-
+    if (supportsClass) {
       return Function("constructor, args, target",
         "'use strict';" +
         "target = target || constructor;" +
@@ -44,6 +44,8 @@
         // ...and for Safari 9
         "instantiator.prototype.constructor = constructor;" +
 
+        // The spread operator is *dramatically faster, so use it if we can:
+        // http://jsperf.com/new-via-spread-vs-dynamic-function/4
         (supportsSpread ?
           "var value = new instantiator(...([].slice.call(args)));" :
 
@@ -162,8 +164,14 @@
         "}" +
         // make a reasonably good replacement for `new.target` which is a
         // syntax error in older engines
-        "var newTarget = (this instanceof newlessConstructor) ? " +
-                         "this.constructor : constructor;" +
+        "var newTarget;" +
+        "if (" + supportsNewTarget + ") {" +
+          "eval('newTarget = new.target');" +
+        "}" +
+        "else {" +
+          "newTarget = (this instanceof newlessConstructor) ?" +
+             "this.constructor : constructor;" +
+        "}" +
         "var returnValue = construct(constructor, arguments, newTarget);" +
         // best effort to make things easy for functions inheriting from classes
         "if (this instanceof newlessConstructor) {" +
