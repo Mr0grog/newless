@@ -166,11 +166,11 @@
         // syntax error in older engines
         "var newTarget;" +
         "var hasNewTarget = false;" +
-        "if (supportsNewTarget) {" +
+        "if (" + supportsNewTarget + ") {" +
           "eval('newTarget = new.target');" +
           "if (newTarget) hasNewTarget = true;" +
         "}" +
-        "if ( !supportsNewTarget || !hasNewTarget ) {" +
+        "if ( !" + supportsNewTarget + " || !hasNewTarget ) {" +
           "newTarget = (this instanceof newlessConstructor) ?" +
              "this.constructor : constructor;" +
         "}" +
