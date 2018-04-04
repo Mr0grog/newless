@@ -130,3 +130,20 @@ try {
 catch(error) {
   warn("This JS engine does not support class syntax; skipping related tests.");
 }
+
+//---- Load tests for custom elements only if supported. ----
+if (typeof customElements !== 'undefined' && customElements.define) {
+
+  if (typeof document !== "undefined" && document.write) {
+    document.write("<sc" + "ript src='test-custom-elements.js'></script>");
+  }
+  else if (typeof require !== "undefined") {
+    require("./test-custom-elements.js");
+  }
+  else {
+    warn("This JS engine supports Custom Elements, but the appropriate tests could not be loaded.");
+  }
+}
+else {
+  warn("This JS engine does not support Custom Elements; skipping related tests.");
+}
